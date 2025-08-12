@@ -20,8 +20,8 @@ interface ClienteService {
     @PUT("clientes")
     fun atualizar(@Body cliente: Cliente): Call<Cliente>
 
-    @DELETE("clientes/{id}")
-    fun excluir (@Path("id") id: Long): Call<Unit>
+    @DELETE("clientes")
+    fun excluir (@Body cliente: Cliente): Call<Unit>
 
     @GET("clientes/{id}")
     fun exibirPorID(@Path("id") id: Long): Call<Cliente>
