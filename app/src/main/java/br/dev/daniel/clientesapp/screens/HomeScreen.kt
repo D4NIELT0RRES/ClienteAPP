@@ -23,16 +23,20 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -49,15 +53,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import br.dev.daniel.clientesapp.R
 import br.dev.daniel.clientesapp.model.Cliente
+import br.dev.daniel.clientesapp.service.ClienteService
 import br.dev.daniel.clientesapp.service.RetrofitFactory
 import br.dev.daniel.clientesapp.ui.theme.ClientesappTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import retrofit2.await
 
 
@@ -92,7 +98,7 @@ fun HomeScreen(modifier: Modifier = Modifier){
             )
             {
                 composable(route = "Home") { TelaHome(paddingValues)}
-                composable(route = "Form") { FormCliente() }
+                composable(route = "Form") { FormCliente(navController) }
             }
         }
     }
@@ -128,16 +134,54 @@ fun TelaHome (paddingValues: PaddingValues){
                     text = "Lista de Clientes"
                 )
             }
-            LazyColumn {
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = 64.dp)
+            ) {
             items(clientes){ cliente ->
-                ClientCard(cliente)
+                ClientCard(cliente, clienteApi)
             }
         }
     }
 }
 
 @Composable
-fun ClientCard(cliente: Cliente){
+fun ClientCard(cliente: Cliente, clienteApi: ClienteService?){
+
+
+
+    var mostrarConfirmacao by remember {
+        mutableStateOf(false)
+    }
+
+    //Mostrar confirmação de exclusão
+    if (mostrarConfirmacao){
+        AlertDialog(
+            onDismissRequest = {
+                mostrarConfirmacao = false
+            },
+            title = { Text(text = "Deletar")},
+            text = { Text(text = "Confirma a exclusão do cliente ${cliente.nome}?")},
+            confirmButton = {
+                Button(
+                    onClick = {
+                        GlobalScope.launch(Dispatchers.IO) {
+                            clienteApi!!.excluir(cliente).await()
+                        }
+                    }
+                ) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { mostrarConfirmacao = false}
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -162,10 +206,16 @@ fun ClientCard(cliente: Cliente){
                 Text(text = cliente.nome, fontWeight = FontWeight.Bold)
                 Text(text = cliente.email, fontSize = 12.sp)
             }
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Deletar"
-            )
+            IconButton(
+                onClick = {
+                    mostrarConfirmacao = true
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Deletar"
+                )
+            }
         }
     }
 }
@@ -174,7 +224,7 @@ fun ClientCard(cliente: Cliente){
 @Composable
 private fun ClientCardPreview() {
     ClientesappTheme {
-        ClientCard(Cliente())
+        ClientCard(Cliente(), null)
     }
 }
 
