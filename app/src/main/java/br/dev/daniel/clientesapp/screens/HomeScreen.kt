@@ -1,10 +1,10 @@
 package br.dev.daniel.clientesapp.screens
 
-import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,18 +48,58 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import br.dev.daniel.clientesapp.R
 import br.dev.daniel.clientesapp.model.Cliente
 import br.dev.daniel.clientesapp.service.RetrofitFactory
 import br.dev.daniel.clientesapp.ui.theme.ClientesappTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import retrofit2.await
 
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier){
+
+
+
+    var navController = rememberNavController()
+
+
+    Scaffold(
+        topBar = {
+            BarraDeTitulo()
+        },
+        bottomBar = {
+            BarraDeNavegacao(navController)
+        },
+        floatingActionButton = {
+            BotaoFlutuante(navController)
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.background)
+        ) {
+            NavHost(
+                navController = navController,
+                startDestination = "Home"
+            )
+            {
+                composable(route = "Home") { TelaHome(paddingValues)}
+                composable(route = "Form") { FormCliente() }
+            }
+        }
+    }
+}
+
+@Composable
+fun TelaHome (paddingValues: PaddingValues){
 
     // Criar uma instância do RetrofitFactory
     val clienteApi = RetrofitFactory().getClienteService()
@@ -73,26 +113,11 @@ fun HomeScreen(modifier: Modifier = Modifier){
         clientes = clienteApi.exibirTodos().await()
         println(clientes)
     }
-
-
-    Scaffold(
-        topBar = {
-            BarraDeTitulo()
-        },
-        bottomBar = {
-            BarraDeNavegacao()
-        },
-        floatingActionButton = {
-            BotaoFlutuante()
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .background(color = MaterialTheme.colorScheme.background)
-        ) {
-            Row {
+    Column (
+        modifier = Modifier
+            .fillMaxSize()
+    ){
+        Row {
                 Icon(
                     imageVector = Icons.Default.AccountBox,
                     contentDescription = "icone da lista de clientes",
@@ -104,9 +129,8 @@ fun HomeScreen(modifier: Modifier = Modifier){
                 )
             }
             LazyColumn {
-                items(clientes){ cliente ->
-                    ClientCard(cliente)
-                }
+            items(clientes){ cliente ->
+                ClientCard(cliente)
             }
         }
     }
@@ -205,7 +229,7 @@ private fun BarraDeTituloPreview(){
 }
 
 @Composable
-fun BarraDeNavegacao(modifier: Modifier = Modifier){
+fun BarraDeNavegacao(navController: NavController){
     NavigationBar(
         containerColor = MaterialTheme
             .colorScheme.primary,
@@ -214,7 +238,7 @@ fun BarraDeNavegacao(modifier: Modifier = Modifier){
     ) {
         NavigationBarItem(
             selected = false,
-            onClick = {},
+            onClick = {navController!!.navigate("Home")},
             icon = {
                 Icon(
                     imageVector = Icons.Default.Home,
@@ -259,38 +283,23 @@ fun BarraDeNavegacao(modifier: Modifier = Modifier){
     }
 }
 
-@Preview
-@Composable
-private fun BarraDeNavegacaoPreview(){
-    ClientesappTheme {
-        BarraDeNavegacao()
-    }
-}
+
 
 @Composable
-fun BotaoFlutuante(modifier: Modifier = Modifier){
+fun BotaoFlutuante(navController: NavController){
     FloatingActionButton(
-        onClick = {}
+        onClick = {
+            navController.navigate(route = "Form")
+        }
     ) {
         Icon(
             imageVector = Icons.Default.Add,
-            contentDescription = "Botão adicionar"
+            contentDescription = "Botão adicionar",
+            tint = MaterialTheme
+                .colorScheme.onTertiary
         )
     }
 }
 
-@Preview
-@Composable
-private fun BotaoFlutuantePreview(){
-    ClientesappTheme {
-        BotaoFlutuante()
-    }
-}
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun HomeScreenPreview(){
-    ClientesappTheme {
-        HomeScreen()
-    }
-}
+
